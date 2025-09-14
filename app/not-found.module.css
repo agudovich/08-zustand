@@ -1,0 +1,16 @@
+.title {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ac8084;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+}
