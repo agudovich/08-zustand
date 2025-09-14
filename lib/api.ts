@@ -4,7 +4,7 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from "axios";
-import type { Note, SelectedTag } from "@/types/note";
+import type { Note, SelectedTag, NoteTag } from "@/types/note";
 
 const api: AxiosInstance = axios.create({
   baseURL: "https://notehub-public.goit.study/api",
@@ -52,7 +52,7 @@ export async function fetchNotes({
 export async function createNote(payload: {
   title: string;
   content?: string;
-  tag: SelectedTag;
+  tag: NoteTag;
 }): Promise<Note> {
   const res = await api.post<Note>("/notes", payload);
   return res.data;

@@ -6,11 +6,37 @@ import {
 import { fetchNotes } from "@/lib/api";
 import NotesClient from "./Notes.client";
 import type { SelectedTag } from "@/types/note";
+import type { Metadata } from "next";
+import { absoluteUrl, OG_IMAGE } from "@/lib/seo";
 
 export const revalidate = 0;
 
 type Params = { slug?: string[] };
 type Search = { page?: string; q?: string };
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug?: string[] }>;
+}): Promise<Metadata> {
+  const { slug } = await props.params;
+  const tag = decodeURIComponent(slug?.[0] ?? "All");
+  const isAll = tag === "All";
+
+  const title = isAll ? "All notes" : `Notes — ${tag}`;
+  const description = isAll ? "All notes" : `All notes with tag "${tag}"`;
+
+  const url = absoluteUrl(`/notes/filter/${encodeURIComponent(tag)}`);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      images: [{ url: OG_IMAGE }],
+    },
+  };
+}
 
 export default async function NotesFilterPage({
   params,
