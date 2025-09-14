@@ -28,6 +28,11 @@ export default function NotePreviewClient({ id }: { id: string }) {
         <article className={css.card}>
           <h1 className={css.title}>{data.title}</h1>
           <p className={css.content}>{data.content}</p>
+          {data.tag && (
+            <p className={css.tag} aria-label={`tag ${data.tag}`}>
+              {data.tag}
+            </p>
+          )}
           <time className={css.date}>
             {new Date(data.updatedAt ?? data.createdAt).toLocaleString()}
           </time>
