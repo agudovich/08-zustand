@@ -1,11 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useTransition } from "react";
+import { FormEvent, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createNote } from "@/lib/api";
+import { useNoteStore } from "@/lib/store/noteStore";
 import type { NoteTag } from "@/types/note";
-import { useNoteStore, initialDraft } from "@/lib/store/noteStore";
 import css from "./NoteForm.module.css";
 
 export interface NoteFormProps {
@@ -15,37 +15,21 @@ export interface NoteFormProps {
 export default function NoteForm({ onCancel }: NoteFormProps) {
   const router = useRouter();
   const qc = useQueryClient();
-  const { draft, setDraft, replaceDraft, clearDraft } = useNoteStore();
   const [isPending, startTransition] = useTransition();
 
-  const [title, setTitle] = useState(draft.title);
-  const [content, setContent] = useState(draft.content);
-  const [tag, setTag] = useState<NoteTag>(draft.tag);
-
-  useEffect(() => {
-    if (!draft || (!draft.title && !draft.content && !draft.tag)) {
-      replaceDraft(initialDraft);
-      setTitle(initialDraft.title);
-      setContent(initialDraft.content);
-      setTag(initialDraft.tag);
-    } else {
-      setTitle(draft.title);
-      setContent(draft.content);
-      setTag(draft.tag);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    setDraft({ title, content, tag });
-  }, [title, content, tag, setDraft]);
+  const {
+    draft,
+    setDraft,
+    clearDraft,
+    hasHydrated, // ждём, пока persist дочитает localStorage
+  } = useNoteStore();
 
   const { mutateAsync, isPending: isCreating } = useMutation({
     mutationFn: async () =>
       createNote({
-        title: title.trim(),
-        content: content.trim(),
-        tag,
+        title: draft.title.trim(),
+        content: draft.content.trim(),
+        tag: draft.tag,
       }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["notes"] });
@@ -55,7 +39,7 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!draft.title.trim()) return;
     try {
       await mutateAsync();
       startTransition(() => router.back());
@@ -69,6 +53,10 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
     else router.back();
   }
 
+  if (!hasHydrated) {
+    return null;
+  }
+
   return (
     <form className={css.form} onSubmit={onSubmit}>
       <div className={css.formGroup}>
@@ -78,8 +66,8 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
           name="title"
           type="text"
           className={css.input}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={draft.title}
+          onChange={(e) => setDraft({ title: e.target.value })}
           minLength={3}
           maxLength={50}
           required
@@ -93,8 +81,8 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
           name="content"
           rows={8}
           className={css.textarea}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
+          value={draft.content}
+          onChange={(e) => setDraft({ content: e.target.value })}
           maxLength={500}
         />
       </div>
@@ -105,8 +93,8 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
           id="tag"
           name="tag"
           className={css.select}
-          value={tag}
-          onChange={(e) => setTag(e.target.value as NoteTag)}>
+          value={draft.tag}
+          onChange={(e) => setDraft({ tag: e.target.value as NoteTag })}>
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
           <option value="Personal">Personal</option>
@@ -126,7 +114,7 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
         <button
           type="submit"
           className={css.submitButton}
-          disabled={isPending || isCreating || title.trim().length < 3}>
+          disabled={isPending || isCreating || draft.title.trim().length < 3}>
           {isCreating ? "Creating..." : "Create note"}
         </button>
       </div>
