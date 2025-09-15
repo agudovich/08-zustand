@@ -10,14 +10,15 @@ import {
 import NoteDetailsClient from "./NoteDetails.client";
 import { fetchNoteById } from "@/lib/api";
 
-type Props = { params: { id: string } };
+export async function generateMetadata(
+  params: Promise<{ id: string }>
+): Promise<Metadata> {
+  const { id } = await params;
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = params.id;
   try {
     const note = await fetchNoteById(id);
     const title = note?.title ? `${note.title}` : "Note details";
-    const description = note?.content?.slice?.(0, 160) || "Note details";
+    const description = (note?.content ?? "").slice(0, 160) || "Note details";
 
     return {
       title,
